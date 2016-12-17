@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+import numpy
+from matplotlib import pyplot
+def runge1(x):
+    return numpy.exp(-16*x**2)
+def runge2(x):
+    return abs(x)
+def cosspace(a, b, n=50):
+    return (a + b)/2 + (b - a)/2 * (numpy.cos(numpy.linspace(0, numpy.pi, n)))
+
+
+def piecewise_linear_interp_and_eval(x, xx):
+    n = len(x) - 1
+    def s_interp(y):
+        perm = numpy.argsort(x)
+        xs = x[perm]
+        ys = y[perm]
+        delta = xs[1:] - xs[:-1]
+        Delta = ys[1:] - ys[:-1]
+        
+        # Assemble tridiagonal system (this can be optimized)
+        S = numpy.zeros((n, 3))
+        S[:,0] = xs[:-1]                                  # Sorted interval left ends
+        S[:,2] = ys[:-1]                                  # Interpolation property
+        S[:,1] = Delta/delta #- delta/3*(2*c[:-1] + c[1:]) # Recover b
+        return S
+    def s_eval(S, xx):
+        left = S[:,0].searchsorted(xx) - 1
+        left[left<0] = 0 # Use the leftmost interval even if xx<=x
+        f = numpy.zeros_like(xx)
+        for i,t in enumerate(xx):
+            f[i] = numpy.polyval(S[left[i],1:], xx[i] - S[left[i],0])
+        return f
+    
+    # Build an explicit matrix for the spline fit evaluated at xx
+    A = numpy.zeros((len(xx), len(x)))
+    for i,e in enumerate(numpy.eye(len(x), len(x))):
+        S = s_interp(e)
+        A[:,i] = s_eval(S, xx)
+    return A
+
+x = numpy.linspace(-1,1,20)
+xx = numpy.linspace(-1,1,100)
+print("piecewise_linear linspace -> linspace: norm=%e" % numpy.linalg.norm(piecewise_linear_interp_and_eval(x,xx)))
+x = cosspace(-1,1,20)
+xx = numpy.linspace(-1,1,100)
+print("piecewise_linear cosspace -> linspace: norm=%e" % numpy.linalg.norm(piecewise_linear_interp_and_eval(x,xx)))
+
+
+def vander_chebyshev(x, n=None):
+    if n is None:
+        n = len(x)
+    T = numpy.ones((len(x), n))
+    if n > 1:
+        T[:,1] = x
+    for k in range(1,n-1):
+        T[:,k+1] = 2* x * T[:,k] - T[:,k-1]
+    return T
+def chebyshev_interp_and_eval(x, xx):
+    """Matrix mapping from values at points x to values
+    of Chebyshev interpolating polynomial at points xx"""
+    A = vander_chebyshev(x)
+    B = vander_chebyshev(xx, len(x))
+    return B.dot(numpy.linalg.inv(A))
+
+x = numpy.linspace(-1,1,20)
+xx = numpy.linspace(-1,1,100)
+print("chebyshev linspace -> linspace: norm=%e" % numpy.linalg.norm(chebyshev_interp_and_eval(x,xx)))
+x = cosspace(-1,1,20)
+xx = numpy.linspace(-1,1,100)
+print("chebyshev cosspace -> linspace: norm=%e" % numpy.linalg.norm(chebyshev_interp_and_eval(x,xx)))
+
+
+def maxerror(interp_and_eval, f, xspace, interval, npoints):
+    for n in npoints:
+        x = xspace(*interval, n)
+        xx = numpy.linspace(*interval, 300)
+        A = interp_and_eval(x, xx)
+        max_error = numpy.linalg.norm(A.dot(f(x)) - f(xx), numpy.inf)
+        if (max_error < 1e-4):
+            break
+            return max_error
+        if (n==100):
+            print("Infinite Norm")
+    return n, max_error
+npoints = numpy.arange(2, 101)
+print("piecewise_linear f() cosspace -> linspace: n=%d max_error=%e" % maxerror(piecewise_linear_interp_and_eval, runge1, cosspace, (-1,1), npoints))
+print("piecewise_linear f() linspace -> linspace: n=%d max_error=%e" % maxerror(piecewise_linear_interp_and_eval, runge1, numpy.linspace, (-1,1), npoints))
+
+def maxerror1(interp_and_eval, f, xspace, interval, npoints):
+    for n in npoints:
+        x = xspace(*interval, n)
+        xx = numpy.linspace(*interval, 300)
+        A = interp_and_eval(x, xx)
+        max_error = numpy.linalg.norm(A.dot(f(x)) - f(xx), numpy.inf)
+        if (max_error < 1e-2):
+            break
+            return max_error
+        if (n==100):
+            print("Infinite Norm")
+    return n, max_error
+npoints = numpy.arange(2, 101)
+print("piecewise_linear g() cosspace -> linspace: n=%d max_error=%e" % maxerror1(piecewise_linear_interp_and_eval, runge2, cosspace, (-1,1), npoints))
+print("piecewise_linear g() linspace -> linspace: n=%d max_error=%e" % maxerror1(piecewise_linear_interp_and_eval, runge2, numpy.linspace, (-1,1), npoints))

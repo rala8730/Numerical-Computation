@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+#mplement two numerical integration method
+import matplotlib.pyplot
+import numpy
+test=[]
+fints = []
+
+@test.append
+class sqrt_of_x:
+    def f(x):
+        return x**2
+    def F(x):
+        return x**3 /3
+
+@test.append
+class f_exp_of_neg_x_time_sin_x:
+    def F(x):
+        return numpy.exp(-x) * numpy.sin(x)
+    def f(x):
+        return -numpy.exp(-x) * (numpy.sin(x)+ numpy.cos(x))
+
+a=1
+b=3
+n=4
+def fint_trapezoid(f,a,b,n):
+    dx = (b - a) / (n - 1)     # We evaluate endpoints of n-1 intervals
+    x = numpy.linspace(a, b, n)
+    fx = f(x)
+    fx[[0,-1]] *= .5
+    I_h=numpy.sum(fx)*dx
+    
+    n=n//2
+    dx = (b - a) / (n - 1)     # We evaluate endpoints of n-1 intervals
+    x = numpy.linspace(a, b, n)
+    fx = f(x)
+    fx[[0,-1]] *= .5
+    I_2h=numpy.sum(fx)*dx            
+    #testsum2=f_prime(b)-f_prime(a)
+    #print("testsum2",testsum2) 
+    return {I_h ,I_2h}  
+#for t in test:
+    #print(fint_trapezoid(t.f, a, b, n))
+
+
+#fint_trapezoid(f,a,b,n)
+def extrapolation(I_h ,I_2h):
+    tolerance=10**(-11)
+    if(abs(I_h-I_2h) < tolerance):
+        return(I_h + (I_h - I_2h) / 3)
+    elif(abs(I_h-I_2h) > tolerance):
+        I_extrap = I_h + (I_h - I_2h) / 3
+        #I_exact = t.F(b) - t.F(a)
+        I_2h=I_h
+        I_2h=I_extrap
+        #I_2h=I_3h
+        #print(I_h,"I_H","*------*",I_2h,"I_2h","*------*""I_3H")
+        return(extrapolation(I_h ,I_2h))
+    else:
+        return("Warning: Not able to find solution to within the desired tolerance of ", tolerance);
+
+@fints.append
+def fint_richadson(f, a, b, n):
+    I_H, I_2H = fint_trapezoid(f, a, b, n)
+    return extrapolation(I_H, I_2H)  
+for t in test:
+    I_H,I_2H=(fint_trapezoid(t.f, a, b, n))
+extrapolation(I_H, I_2H)
+#x = numpy.linspace(-1, 1, 100)
+
+
+x= numpy.array([0,1,2])
+def legendre_eval(x, n=None):
+    n+=1
+    if n is None:
+        n = len(x)
+    P = numpy.ones((len(x), n))
+    P_prime=numpy.zeros((len(x),n))
+    if n > 1:
+        P[:,1] = x
+    if n > 1:
+        P_prime[:,1]=1
+    for k in range(1,n-1):
+        P[:,k+1] = ((2*k+1) * x * P[:,k] - k * P[:,k-1]) / (k + 1)
+        P_prime[:,k+1] = ((2*k+1)* P[:,k] + P_prime[:,k-1])
+    return P[:,-1], P_prime[:,-1]
+legendre_eval(x, 2)
+
+
+def legendre_roots(n):
+    n+=1
+    xx=numpy.cos(numpy.linspace(.5/(n-1), 1-.5/(n-1), n) * numpy.pi)
+    for i in range(100):
+        fx, dfx = legendre_eval(xx,n)
+        if all(numpy.abs(fx) < 1e-12):
+            return xx
+        try:
+            xx -= fx / dfx
+        except ZeroDivisionError:
+            return xx
+legendre_roots(5)[0]
+
+
+def vander_legendre(x, n=None):
+    if n is None:
+        n = len(x)
+    P = numpy.ones((len(x), n))
+    if n > 1:
+        P[:,1] = x
+    for k in range(1,n-1):
+        P[:,k+1] = ((2*k+1) * x * P[:,k] - k * P[:,k-1]) / (k + 1)
+    return P
+vander_legendre(x, n=None)
+
+#@fints.append
+def fint_legendre(f, a, b, n):
+    x =(b-a)*legendre_roots(n)/2 + (b+a)/2
+    fx = f(x)
+    P = vander_legendre(legendre_roots(n))
+    c = numpy.linalg.solve(P,fx)
+    return c[0] * (b-a)
+#print(fint_legendre)
+fint_legendre(t.f,a,b,n)
+
+fints.append(fint_legendre)
+
+for t in test:
+    for fint in fints:
+        a, b = a,b
+        npoints = 10*2**numpy.arange(5)
+        for n in npoints:
+            I = fint(t.f, a, b, n)
+            print('{:12s} {}: n={: 4d} error={: 10e}'.
+                  format(t.__name__, fint.__name__, n, I - (t.F(b) - t.F(a))))
+        print("-------------------------------------------------------")
+
