@@ -35,17 +35,3 @@ Let `IterationNumber` start at 0 with the initial guess.
 Please note, however, that f(x) could be an arbitrary function (it could have its own solves inside, table lookups, etc.)
 Also, we'll see in class how the output of symbolic differentiation expression grows exponentially in the size of the input.
 So symbolic differentiation is not a general purpose solution despite being very useful for testing.
-
-## Updating your repository
-
-After you fork this repository, your fork does not update automatically when I add instructions or input/output for future assignments.
-I recommend running the following from within the clone on your computer (only needed once ever):
-
-    git remote add upstream git@git.cs.colorado.edu:csci-3656/csci-3656
-
-and then to update at any time
-
-    git pull upstream master
-
-which will pull changes from my repository and merge them into yours.
-This command is idempotent -- it does nothing if you are up to date.
