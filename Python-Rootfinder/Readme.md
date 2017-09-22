@@ -7,7 +7,7 @@
 2. Find a *strictly* monotonically increasing function with a unique root for which Newton's method diverges for initial guess x=1.0.  Add this to your test set.
 3. Newton's method is often paired with a "line search" that scales the step size by a factor such that the norm of the new residual is smaller than the previous.  I.e., find a scaling factor such that `|f(x_{n+1})| < |f(x_n)|` where `x_{n+1} = x_n - scale * f(x)/f'(x)`.  One of the simplest variants is to start with a scaling factor of 1 and cut it in half until the norm decreases.  Implement this variant in `hw1/newtonls` and run it on your test equations.
 4. Newton's method is based on dropping the quadratic and higher terms in a Taylor expansion.  Write a program `hw1/cubic` that implements a method that keeps the quadratic term in the Taylor expansion (dropping cubic and higher terms).  You will need to make choices about multiple roots or non-existant roots; we discussed some options in class.  Find an equation for which Newton is better and an equation for which the cubic algorithm is better.  (Better means that an algorithm converges faster or converges when the other diverges.)  Add these to your test suite.
-
+<!--
 ### Edits (posted 2016-09-08)
 
 * Update part 2 to request *strict* monotonicity (i.e., the derivative is never zero).  You can use a function that is defined for all real numbers `x`, but that is not required.
@@ -35,3 +35,4 @@ Let `IterationNumber` start at 0 with the initial guess.
 Please note, however, that f(x) could be an arbitrary function (it could have its own solves inside, table lookups, etc.)
 Also, we'll see in class how the output of symbolic differentiation expression grows exponentially in the size of the input.
 So symbolic differentiation is not a general purpose solution despite being very useful for testing.
+-->
